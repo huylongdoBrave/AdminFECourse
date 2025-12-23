@@ -1,13 +1,13 @@
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router";
 
 const useGoBack = () => {
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const goBack = () => {
-    if (window.history.length > 1) {
-      router.back(); // Navigate to the previous route
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1); // Go back to the previous page
     } else {
-      router.push("/"); // Redirect to home if no history exists
+      navigate("/"); // Redirect to home if no history exists
     }
   };
 

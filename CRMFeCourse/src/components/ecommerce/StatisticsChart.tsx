@@ -1,14 +1,6 @@
-"use client";
-import React from "react";
-// import Chart from "react-apexcharts";
+import Chart from "react-apexcharts";
 import { ApexOptions } from "apexcharts";
 import ChartTab from "../common/ChartTab";
-import dynamic from "next/dynamic";
-
-// Dynamically import the ReactApexChart component
-const ReactApexChart = dynamic(() => import("react-apexcharts"), {
-  ssr: false,
-});
 
 export default function StatisticsChart() {
   const options: ApexOptions = {
@@ -137,12 +129,7 @@ export default function StatisticsChart() {
 
       <div className="max-w-full overflow-x-auto custom-scrollbar">
         <div className="min-w-[1000px] xl:min-w-full">
-          <ReactApexChart
-            options={options}
-            series={series}
-            type="area"
-            height={310}
-          />
+          <Chart options={options} series={series} type="area" height={310} />
         </div>
       </div>
     </div>

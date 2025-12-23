@@ -1,11 +1,10 @@
-"use client";
-import { ThemeToggleButton } from "@/components/common/ThemeToggleButton";
-import NotificationDropdown from "@/components/header/NotificationDropdown";
-import UserDropdown from "@/components/header/UserDropdown";
-import { useSidebar } from "@/context/SidebarContext";
-import Image from "next/image";
-import Link from "next/link";
-import React, { useState ,useEffect,useRef} from "react";
+import { useEffect, useRef, useState } from "react";
+
+import { Link } from "react-router";
+import { useSidebar } from "../context/SidebarContext";
+import { ThemeToggleButton } from "../components/common/ThemeToggleButton";
+import NotificationDropdown from "../components/header/NotificationDropdown";
+import UserDropdown from "../components/header/UserDropdown";
 
 const AppHeader: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
@@ -23,6 +22,7 @@ const AppHeader: React.FC = () => {
   const toggleApplicationMenu = () => {
     setApplicationMenuOpen(!isApplicationMenuOpen);
   };
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -83,17 +83,13 @@ const AppHeader: React.FC = () => {
             {/* Cross Icon */}
           </button>
 
-          <Link href="/" className="lg:hidden">
-            <Image
-              width={154}
-              height={32}
+          <Link to="/" className="lg:hidden">
+            <img
               className="dark:hidden"
               src="./images/logo/logo.svg"
               alt="Logo"
             />
-            <Image
-              width={154}
-              height={32}
+            <img
               className="hidden dark:block"
               src="./images/logo/logo-dark.svg"
               alt="Logo"
@@ -123,7 +119,7 @@ const AppHeader: React.FC = () => {
           <div className="hidden lg:block">
             <form>
               <div className="relative">
-                <span className="absolute -translate-y-1/2 left-4 top-1/2 pointer-events-none">
+                <span className="absolute -translate-y-1/2 pointer-events-none left-4 top-1/2">
                   <svg
                     className="fill-gray-500 dark:fill-gray-400"
                     width="20"
@@ -164,13 +160,11 @@ const AppHeader: React.FC = () => {
             {/* <!-- Dark Mode Toggler --> */}
             <ThemeToggleButton />
             {/* <!-- Dark Mode Toggler --> */}
-
-           <NotificationDropdown /> 
+            <NotificationDropdown />
             {/* <!-- Notification Menu Area --> */}
           </div>
           {/* <!-- User Area --> */}
-          <UserDropdown /> 
-    
+          <UserDropdown />
         </div>
       </div>
     </header>
