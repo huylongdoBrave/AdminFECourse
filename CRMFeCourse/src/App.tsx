@@ -15,6 +15,8 @@ import Calendar from "./pages/Calendar";
 import BasicTables from "./pages/Tables/BasicTables";
 import FormElements from "./pages/Forms/FormElements";
 import Blank from "./pages/Blank";
+import Curriculum  from "./pages/Curriculum";
+import Pricing from "./pages/PricingCourse";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
@@ -27,12 +29,14 @@ export default function App() {
         <Routes>
           {/* Dashboard Layout */}
           <Route element={<AppLayout />}>
-            <Route index path="/" element={<Home />} />
+            <Route index path="/" element={<Home />} />                   
 
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/blank" element={<Blank />} />
+            <Route path="/pricing-course" element={<Pricing />} />
+            <Route path="/curriculum" element={<Curriculum />} />
 
             {/* Forms */}
             <Route path="/form-elements" element={<FormElements />} />

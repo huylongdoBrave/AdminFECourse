@@ -20,7 +20,7 @@ const LayoutContent: React.FC = () => {
       >
         <AppHeader />
         <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
-          <Outlet />
+        <Outlet />
         </div>
       </div>
     </div>

@@ -51,11 +51,13 @@ const navItems: NavItem[] = [
     icon: <TableIcon />,
     subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
   },
-  {
+  {                                            
     name: "Pages",
     icon: <PageIcon />,
     subItems: [
-      { name: "Blank Page", path: "/blank", pro: false },
+      // { name: "Blank Page", path: "/blank", pro: false },
+      { name: "Giá Khóa Học", path: "/pricing-course", pro: false },
+      { name: "Chương Trình Học", path: "/curriculum", pro: false},
       { name: "404 Error", path: "/error-404", pro: false },
     ],
   },
