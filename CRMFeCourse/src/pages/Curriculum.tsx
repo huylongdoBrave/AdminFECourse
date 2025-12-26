@@ -1,4 +1,3 @@
-"use client"
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import { useState, useEffect } from "react"
