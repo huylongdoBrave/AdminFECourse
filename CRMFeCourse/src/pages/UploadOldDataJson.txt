@@ -1,0 +1,82 @@
+import React from 'react';
+import axios from 'axios';
+
+// Dữ liệu gốc của bạn
+const curriculumData = [
+{
+    id: 1,
+    title: "Module 1: HTML & CSS cơ bản",
+    duration: "2 tuần",
+    description:
+      "Học các kiến thức nền tảng về HTML5 và CSS3, từ cú pháp cơ bản đến responsive design. Bạn sẽ nắm vững cách xây dựng layout hiện đại với Flexbox và Grid.",
+    lessions: [
+      "Semantic HTML và cấu trúc trang web",
+      "CSS Flexbox và Grid Layout",
+      "Responsive Design với Media Queries",
+      "CSS Variables và Custom Properties",
+    ],
+  },
+  {
+    id: 2,
+    title: "Module 2: JavaScript hiện đại",
+    duration: "3 tuần",
+    description:
+      "Khám phá JavaScript ES6+ với các tính năng mới nhất. Học cách làm việc với async/await, promises và các design patterns phổ biến trong JS hiện đại.",
+    lessions: ["ES6+ Syntax và Features", "Async/Await và Promises", "DOM Manipulation", "API Integration với Fetch"],
+  },
+  {
+    id: 3,
+    title: "Module 3: React & TypeScript",
+    duration: "4 tuần",
+    description:
+      "Làm chủ React library và TypeScript. Xây dựng ứng dụng web động với hooks, context API và type-safe code. Hiểu rõ component lifecycle và state management.",
+    lessions: [
+      "React Components và Hooks",
+      "State Management với Context API",
+      "TypeScript cơ bản đến nâng cao",
+      "React Router và Navigation",
+    ],
+  },
+  {
+    id: 4,
+    title: "Module 4: Next.js & Deployment",
+    duration: "3 tuần",
+    description:
+      "Học framework Next.js mạnh mẽ với App Router, Server Components và các tính năng tối ưu hóa. Triển khai ứng dụng lên production và tích hợp database.",
+    lessions: [
+      "Next.js App Router và Server Components",
+      "API Routes và Server Actions",
+      "Database Integration",
+      "Deploy lên Vercel",
+    ],
+  },
+];
+
+const API_URL = "https://694cec27da5ddabf0037d71b.mockapi.io/curriculum_plans"; 
+
+
+const SeedData = () => {
+  const handlePushData = async () => {
+    try {
+      for (const plan of curriculumData) {
+        await axios.post(API_URL, plan);
+        console.log(`Đã thêm: ${plan.title}`);
+      }
+      alert("Đã đẩy xong dữ liệu lên Server!");
+    } catch (error) {
+      console.error(error);
+      alert("Lỗi rồi, xem console đi");
+    }
+  };
+
+  return (
+    <div className="p-10">
+      <h1>Công cụ đẩy dữ liệu mẫu</h1>
+      <button onClick={handlePushData} className="bg-blue-500 text-white p-3 rounded">
+        Bấm vào đây để Upload dữ liệu cũ lên API
+      </button>
+    </div>
+  );
+};
+
+export default SeedData;

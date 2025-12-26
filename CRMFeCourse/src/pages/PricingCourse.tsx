@@ -21,8 +21,8 @@ export default function PricingCourse() {
     const fetchPlans = async () => {
         setLoading(true);
         try {
-            const res = await axios.get(API_URL);
-            setPlans(res.data);
+            const response = await axios.get(API_URL);
+            setPlans(response.data);
         } catch (error) {
             console.error("Lỗi lấy data:", error);
         } finally {
