@@ -1,6 +1,6 @@
 // import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, memo } from "react"
 import { createPortal } from "react-dom"
 import axios from "axios"
 import {  PlayCircle, Clock, Trash2, Plus, Edit, BookOpen, X, Save, Loader2   } from "lucide-react"
@@ -13,6 +13,76 @@ interface CurriculumPlan {
     description: string;
     lessions: string[];
 }
+
+// Memoized ChapterCard component
+const ChapterCard = memo(({ chapter, onDelete, onEdit }: { 
+    chapter: CurriculumPlan, 
+    onDelete: (id: string) => void, 
+    onEdit: (chapter: CurriculumPlan) => void 
+}) => {
+    return (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col hover:shadow-md transition-shadow">
+            {/* Header Card: Tên chương + Thời lượng */}
+            <div className="flex justify-between items-start mb-4 border-b border-gray-100 pb-4">
+                <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded uppercase">
+                            Chapter {chapter.id}
+                        </span>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 leading-tight">{chapter.title}</h3>
+                    
+                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                        <div className="flex items-center gap-1">
+                            <Clock size={14} />
+                            <span>{chapter.duration}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <BookOpen size={14} />
+                            <span>{Array.isArray(chapter.lessions) ? chapter.lessions.length : 0} bài học</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Body Card: Danh sách bài học */}
+            <div className="flex-1 mb-6">
+                <p className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Danh sách bài học:</p>
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 max-h-[200px] overflow-y-auto custom-scrollbar">
+                    <ul className="space-y-2">
+                    {Array.isArray(chapter.lessions) && chapter.lessions.length > 0 ? (
+                        chapter.lessions.map((lesson, index) => (
+                            <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
+                            <PlayCircle size={16} className="text-green-500 shrink-0 mt-0.5" /> 
+                            <span>{lesson}</span>
+                            </li>
+                        ))
+                    ) : (
+                        <li className="text-sm text-gray-400 italic">Chưa có bài học nào</li>
+                    )}
+                    </ul>
+                </div>
+            </div>
+
+            {/* Footer Card: Nút bấm */}
+            <div className="flex gap-3 mt-auto pt-2">
+                <button 
+                onClick={() => onEdit(chapter)}
+                className="flex-1 flex items-center justify-center gap-2 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium"
+                >
+                <Edit size={16} /> Sửa
+                </button>
+                <button 
+                onClick={() => onDelete(chapter.id)}
+                className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 transition font-medium"
+                >
+                <Trash2 size={16} /> Xóa
+                </button>
+            </div>
+        </div>
+    );
+});
+ChapterCard.displayName = "ChapterCard";
 
 export default function Curriculum() {
 
@@ -36,7 +106,7 @@ export default function Curriculum() {
 
   const API_URL = "https://694cec27da5ddabf0037d71b.mockapi.io/curriculum_plans";
 
-  const fetchChapters = async () => {
+  const fetchChapters = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await axios.get(API_URL);
@@ -46,42 +116,44 @@ export default function Curriculum() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     if (window.confirm("Bạn có chắc muốn xóa Chương này không? Toàn bộ bài học trong đó sẽ mất.")) {
       try {
         await axios.delete(`${API_URL}/${id}`);
         // Xóa thành công -> cập nhật lại state để giao diện tự đổi
-        setChapters(chapters.filter((chapter) => chapter.id !== id));
+        setChapters(prev => prev.filter((chapter) => chapter.id !== id));
         alert("Đã xóa thành công!");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         alert("Xóa thất bại: " + error.message);
       }
     }
-  };
+  }, []);
 
   //thêm 1 bài học nhỏ vào danh sách tạm
-  const handleAddLessonToInterceptor = () => {
-        if (!formData.currentLesson.trim()) return;
-        setFormData({
-            ...formData,
-            lessions: [...formData.lessions, formData.currentLesson],
-            currentLesson: "" // Reset ô nhập bài học
+  const handleAddLessonToInterceptor = useCallback(() => {
+        setFormData(prev => {
+            if (!prev.currentLesson.trim()) return prev;
+            return {
+                ...prev,
+                lessions: [...prev.lessions, prev.currentLesson],
+                currentLesson: "" // Reset ô nhập bài học
+            };
         });
-  };
+  }, []);
 
   // Hàm xóa 1 bài học nhỏ khỏi danh sách tạm
-  const handleRemoveTempLesson = (indexToRemove: number) => {
-      setFormData({
-          ...formData,
-          lessions: formData.lessions.filter((_, index) => index !== indexToRemove)
-      });
-  };
+  const handleRemoveTempLesson = useCallback((indexToRemove: number) => {
+      setFormData(prev => ({
+          ...prev,
+          lessions: prev.lessions.filter((_, index) => index !== indexToRemove)
+      }));
+  }, []);
 
-  const handleSaveChapter = async () => {
+  const handleSaveChapter = useCallback(async () => {
       if (!formData.title || !formData.duration) {
           alert("Vui lòng nhập Tên chương và Thời lượng!");
           return;
@@ -99,7 +171,7 @@ export default function Curriculum() {
           const response = await axios.post(API_URL, newChapter);
           
           // Cập nhật giao diện ngay lập tức
-          setChapters([...chapters, response.data]);
+          setChapters(prev => [...prev, response.data]);
           
           // Reset form và đóng modal
           setFormData({ title: "", duration: "", currentLesson: "", lessions: [] });
@@ -113,26 +185,25 @@ export default function Curriculum() {
       } finally {
           setIsSubmitting(false);
       }
-  };
+  }, [formData]);
 
   // Mở Popup Sửa
-  const handleOpenEdit = (chapter: CurriculumPlan) => {
+  const handleOpenEdit = useCallback((chapter: CurriculumPlan) => {
         setEditingChapter(chapter); // Lưu data đang được bấm vào state
         setIsEditModalOpen(true);   // Mở popup
-  };
+  }, []);
 
-  const handleUpdateSuccess = (updatedChapter: CurriculumPlan) => {
+  const handleUpdateSuccess = useCallback((updatedChapter: CurriculumPlan) => {
         // Tìm data cũ trong danh sách và thay mới
-        const newChapters = chapters.map(ch => 
+        setChapters(prev => prev.map(ch => 
             ch.id === updatedChapter.id ? updatedChapter : ch
-        );
-        setChapters(newChapters);
-  };
+        ));
+  }, []);
 
 
   useEffect(() => {
     fetchChapters();
-  }, []);
+  }, [fetchChapters]);
 
   return (
     <div>
@@ -165,66 +236,12 @@ export default function Curriculum() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
             {chapters.map((chapter) => (
-              <div key={chapter.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col hover:shadow-md transition-shadow">
-                
-                {/* Header Card: Tên chương + Thời lượng */}
-                <div className="flex justify-between items-start mb-4 border-b border-gray-100 pb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded uppercase">
-                          Chapter {chapter.id}
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 leading-tight">{chapter.title}</h3>
-                    
-                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                      <div className="flex items-center gap-1">
-                          <Clock size={14} />
-                          <span>{chapter.duration}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                          <BookOpen size={14} />
-                          <span>{Array.isArray(chapter.lessions) ? chapter.lessions.length : 0} bài học</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Body Card: Danh sách bài học */}
-                <div className="flex-1 mb-6">
-                  <p className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Danh sách bài học:</p>
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 max-h-[200px] overflow-y-auto custom-scrollbar">
-                      <ul className="space-y-2">
-                      {Array.isArray(chapter.lessions) && chapter.lessions.length > 0 ? (
-                          chapter.lessions.map((lesson, index) => (
-                              <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
-                              <PlayCircle size={16} className="text-green-500 shrink-0 mt-0.5" /> 
-                              <span>{lesson}</span>
-                              </li>
-                          ))
-                      ) : (
-                          <li className="text-sm text-gray-400 italic">Chưa có bài học nào</li>
-                      )}
-                      </ul>
-                  </div>
-                </div>
-
-                {/* Footer Card: Nút bấm */}
-                <div className="flex gap-3 mt-auto pt-2">
-                  <button 
-                    onClick={() => handleOpenEdit(chapter) }
-                    className="flex-1 flex items-center justify-center gap-2 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium"
-                  >
-                    <Edit size={16} /> Sửa
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(chapter.id)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 transition font-medium"
-                  >
-                    <Trash2 size={16} /> Xóa
-                  </button>
-                </div>
-              </div>
+              <ChapterCard 
+                key={chapter.id}
+                chapter={chapter}
+                onDelete={handleDelete}
+                onEdit={handleOpenEdit}
+              />
             ))}
           </div>
         )}

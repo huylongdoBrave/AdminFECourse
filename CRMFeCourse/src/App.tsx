@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
+import { useEffect, useState } from "react";
 import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
@@ -20,8 +21,53 @@ import Pricing from "./pages/PricingCourse";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
+import LoginAccess from './components/auth/LoginAccess';
 
+ 
 export default function App() {
+
+  //  === TRẠNG THÁI XÁC THỰC QUYỀN XEM TRANG ZOOTOPIA ===
+  //  Quyền xem trang với 3 trạng thái: đang kiểm tra, đã xác thực, chưa xác thực
+  const [authStatus, setAuthStatus] = useState<'checking' | 'authenticated' | 'unauthenticated'>('checking');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const checkAccessSession = () => {
+      const sessionData = localStorage.getItem("accessSession");
+      if (sessionData) {
+        try {
+          const session = JSON.parse(sessionData);
+          const now = new Date().getTime();
+          const sessionDuration = 50 * 60 * 1000; // Phiên truy cập hợp lệ trong 50 phút
+
+          if (session.isLoggedIn && (now - session.timestamp < sessionDuration)) {
+            setAuthStatus('authenticated'); 
+          } else {
+            localStorage.removeItem("accessSession"); 
+            setAuthStatus('unauthenticated');
+          }
+        } catch (error) {
+          localStorage.removeItem("accessSession"); 
+          setAuthStatus('unauthenticated');
+          console.error("Error parsing session data:", error);
+        }
+      } else {
+        setAuthStatus('unauthenticated');
+      }
+    };
+    checkAccessSession();
+  }, []); // Chạy một lần khi component được mount
+
+  // Chờ kiểm tra phiên hoàn tất
+  if (authStatus === 'checking') {
+    return null; // Hoặc 1 component loading toàn màn hình
+  }
+  if (authStatus === 'unauthenticated') {
+    return <LoginAccess onLoginSuccess={() => setAuthStatus('authenticated')} />
+  }
+  //  === ENDING XỬ LÝ XÁC THỰC ===
+
+
   return (
     <>
       <Router>
@@ -29,7 +75,7 @@ export default function App() {
         <Routes>
           {/* Dashboard Layout */}
           <Route element={<AppLayout />}>
-            <Route index path="/" element={<Home />} />                   
+            <Route index path="/" element={<Home isLoggedIn={isLoggedIn} />} />                   
 
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />

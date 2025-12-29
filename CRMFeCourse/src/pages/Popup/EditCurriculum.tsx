@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, memo} from "react"
 import axios from "axios"
 import {  PlayCircle, Trash2, Plus, X, Save, Loader2   } from "lucide-react"
 
@@ -18,8 +18,8 @@ interface EditCurriculumProps {
     initialData: CurriculumPlan | null; 
     onSuccess: (updatedChapter: CurriculumPlan) => void; // Hàm báo cho cha biết đã sửa xong
 }
-
-export default function EditCurriculumModal({ isOpen, onClose, initialData, onSuccess }: EditCurriculumProps) {
+const EditCurriculumModal: React.FC<EditCurriculumProps> = ({isOpen, onClose, initialData, onSuccess}) =>{
+// export default  function EditCurriculumModal({ isOpen, onClose, initialData, onSuccess }: EditCurriculumProps) {
         
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -45,24 +45,24 @@ export default function EditCurriculumModal({ isOpen, onClose, initialData, onSu
 
 
   //thêm 1 bài học nhỏ vào danh sách tạm
-    const handleAddLesson = () => {
+    const handleAddLesson = useCallback(() => {
         if (!formData.currentLesson.trim()) return;
         setFormData({
             ...formData,
             lessions: [...formData.lessions, formData.currentLesson],
             currentLesson: ""
         });
-    };
+    },[]);
 
   // xóa 1 bài học nhỏ khỏi danh sách tạm
-    const handleRemoveLesson = (indexToRemove: number) => {
+    const handleRemoveLesson = useCallback( (indexToRemove: number) => {
         setFormData({
             ...formData,
             lessions: formData.lessions.filter((_, index) => index !== indexToRemove)
         });
-    };
+    }, []);
 
-    const handleUpdate = async () => {
+    const handleUpdate = useCallback(async () => {
         if (!initialData) return;
         if (!formData.title || !formData.duration) {
             alert("Vui lòng nhập đủ thông tin!");
@@ -91,7 +91,7 @@ export default function EditCurriculumModal({ isOpen, onClose, initialData, onSu
         } finally {
             setIsSubmitting(false);
         }
-    };
+    },[initialData, formData, onclose]);
 
     if (!isOpen || !initialData) return null;
 
@@ -181,3 +181,6 @@ export default function EditCurriculumModal({ isOpen, onClose, initialData, onSu
     </div>
   );
 }
+export default memo(EditCurriculumModal);
+
+//

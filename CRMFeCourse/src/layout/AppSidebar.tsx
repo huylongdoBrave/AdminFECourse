@@ -28,37 +28,37 @@ type NavItem = {
 const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
-    name: "Dashboard",
-    subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+    name: "Thống Kê",
+    subItems: [{ name: "Giao Diện Biểu Đồ", path: "/", pro: false }],
   },
-  {
-    icon: <CalenderIcon />,
-    name: "Calendar",
-    path: "/calendar",
-  },
-  {
-    icon: <UserCircleIcon />,
-    name: "User Profile",
-    path: "/profile",
-  },
-  {
-    name: "Forms",
-    icon: <ListIcon />,
-    subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
-  },
-  {
-    name: "Tables",
-    icon: <TableIcon />,
-    subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-  },
+  // {
+  //   icon: <CalenderIcon />,
+  //   name: "Calendar",
+  //   path: "/calendar",
+  // },
+  // {
+  //   icon: <UserCircleIcon />,
+  //   name: "User Profile",
+  //   path: "/profile",
+  // },
+  // {
+  //   name: "Forms",
+  //   icon: <ListIcon />,
+  //   subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
+  // },
+  // {
+  //   name: "Tables",
+  //   icon: <TableIcon />,
+  //   subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
+  // },
   {                                            
-    name: "Pages",
+    name: "Trang Quản Lý",
     icon: <PageIcon />,
     subItems: [
       // { name: "Blank Page", path: "/blank", pro: false },
-      { name: "Giá Khóa Học", path: "/pricing-course", pro: false },
-      { name: "Chương Trình Học", path: "/curriculum", pro: false},
-      { name: "404 Error", path: "/error-404", pro: false },
+      { name: "Quản Lý Giá Khóa Học", path: "/pricing-course", pro: false },
+      { name: "Quản Lý Chương Trình Học", path: "/curriculum", pro: false},
+      { name: "Giao diện trang 404", path: "/error-404", pro: false },
     ],
   },
 ];
@@ -66,7 +66,7 @@ const navItems: NavItem[] = [
 const othersItems: NavItem[] = [
   {
     icon: <PieChartIcon />,
-    name: "Charts",
+    name: "Giao diện Chart",
     subItems: [
       { name: "Line Chart", path: "/line-chart", pro: false },
       { name: "Bar Chart", path: "/bar-chart", pro: false },
@@ -74,7 +74,7 @@ const othersItems: NavItem[] = [
   },
   {
     icon: <BoxCubeIcon />,
-    name: "UI Elements",
+    name: "Giao diện thuộc tính",
     subItems: [
       { name: "Alerts", path: "/alerts", pro: false },
       { name: "Avatar", path: "/avatars", pro: false },
@@ -86,7 +86,7 @@ const othersItems: NavItem[] = [
   },
   {
     icon: <PlugInIcon />,
-    name: "Authentication",
+    name: "Giao diện xác thực",
     subItems: [
       { name: "Sign In", path: "/signin", pro: false },
       { name: "Sign Up", path: "/signup", pro: false },
@@ -362,7 +362,7 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "Others"
+                  "Giao Diện Tham Khảo"
                 ) : (
                   <HorizontaLDots />
                 )}
