@@ -29,7 +29,7 @@ export default function App() {
   //  === TRẠNG THÁI XÁC THỰC QUYỀN XEM TRANG ZOOTOPIA ===
   //  Quyền xem trang với 3 trạng thái: đang kiểm tra, đã xác thực, chưa xác thực
   const [authStatus, setAuthStatus] = useState<'checking' | 'authenticated' | 'unauthenticated'>('checking');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const checkAccessSession = () => {
@@ -75,7 +75,7 @@ export default function App() {
         <Routes>
           {/* Dashboard Layout */}
           <Route element={<AppLayout />}>
-            <Route index path="/" element={<Home isLoggedIn={isLoggedIn} />} />                   
+            <Route index path="/" element={<Home isLoggedIn={true} />} />                   
 
             {/* Others Page */}
             <Route path="/profile" element={<UserProfiles />} />
