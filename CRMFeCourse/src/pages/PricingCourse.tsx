@@ -1,4 +1,4 @@
-import PageBreadcrumb from "../components/common/PageBreadCrumb";
+// import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import { useEffect, useState } from 'react';
 import axios from 'axios';
@@ -54,7 +54,7 @@ export default function PricingCourse() {
         title="React.js Pricing Dashboard | TailAdmin - Next.js Admin Dashboard Template"
         description="This is React.js Pricing Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
       />
-      <PageBreadcrumb pageTitle="Pricing Page" />
+      {/* <PageBreadcrumb pageTitle="Quản Lý Bảng Giá" /> */}
 
 
           {/* <p className="text-sm text-gray-500 dark:text-gray-400 sm:text-base">
@@ -71,7 +71,10 @@ export default function PricingCourse() {
             </div>
 
             {loading ? (
-                <div className="text-center py-10">Đang tải dữ liệu...</div>
+                <div className="flex justify-center items-center py-20">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                    <span className="ml-2 text-gray-600">Đang tải dữ liệu...</span>
+                </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {plans.map((plan) => (

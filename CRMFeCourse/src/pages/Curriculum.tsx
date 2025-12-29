@@ -1,4 +1,4 @@
-import PageBreadcrumb from "../components/common/PageBreadCrumb";
+// import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
@@ -140,13 +140,13 @@ export default function Curriculum() {
         title="React.js Curriculum Dashboard | TailAdmin - Next.js Admin Dashboard Template"
         description="This is React.js Curriculum Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
       />
-      <PageBreadcrumb pageTitle="Curriculum Page" />
+      {/* <PageBreadcrumb pageTitle="Curriculum Page" /> */}
 
       <div className="p-6 bg-gray-50 min-h-screen">
         {/* Header Page */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Quản lý Lộ trình học</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Quản Lý Chương Trình Học</h1>
             <p className="text-gray-500 text-sm mt-1">Danh sách các chương và bài học chi tiết</p>
           </div>
           <button 
