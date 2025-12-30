@@ -78,6 +78,7 @@ const ChapterCard = memo(({ chapter, onDelete, onEdit }: {
 });
 ChapterCard.displayName = "ChapterCard";
 
+
 export default function Curriculum() {
 
     const [chapters, setChapters] = useState<CurriculumPlan[]>([]);
