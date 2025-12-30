@@ -1,0 +1,217 @@
+// import PageBreadcrumb from "../components/common/PageBreadCrumb";
+import PageMeta from "../components/common/PageMeta";
+import { useState, useEffect, useCallback, memo } from "react"
+import axios from "axios"
+import {  PlayCircle, Clock, Trash2, Plus, Edit, BookOpen   } from "lucide-react"
+import EditCurriculumModal from "./Popup/EditCurriculum";
+import AddCurriculumModal from "./Popup/AddCurriculum";
+
+interface CurriculumPlan {
+    id: string;
+    title: string;
+    duration: string;
+    description: string;
+    lessions: string[];
+}
+
+// Memoized ChapterCard component
+const ChapterCard = memo(({ chapter, onDelete, onEdit }: { 
+    chapter: CurriculumPlan, 
+    onDelete: (id: string) => void, 
+    onEdit: (chapter: CurriculumPlan) => void 
+}) => {
+    return (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col hover:shadow-md transition-shadow">
+            {/* Header Card: Tên chương + Thời lượng */}
+            <div className="flex justify-between items-start mb-4 border-b border-gray-100 pb-4">
+                <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded uppercase">
+                            Chapter {chapter.id}
+                        </span>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 leading-tight">{chapter.title}</h3>
+                    
+                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                        <div className="flex items-center gap-1">
+                            <Clock size={14} />
+                            <span>{chapter.duration}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <BookOpen size={14} />
+                            <span>{Array.isArray(chapter.lessions) ? chapter.lessions.length : 0} bài học</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Body Card: Danh sách bài học */}
+            <div className="flex-1 mb-6">
+                <p className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Danh sách bài học:</p>
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 max-h-[200px] overflow-y-auto custom-scrollbar">
+                    <ul className="space-y-2">
+                    {Array.isArray(chapter.lessions) && chapter.lessions.length > 0 ? (
+                        chapter.lessions.map((lesson, index) => (
+                            <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
+                            <PlayCircle size={16} className="text-green-500 shrink-0 mt-0.5" /> 
+                            <span>{lesson}</span>
+                            </li>
+                        ))
+                    ) : (
+                        <li className="text-sm text-gray-400 italic">Chưa có bài học nào</li>
+                    )}
+                    </ul>
+                </div>
+            </div>
+
+            {/* Footer Card: Nút bấm */}
+            <div className="flex gap-3 mt-auto pt-2">
+                <button 
+                onClick={() => onEdit(chapter)}
+                className="flex-1 flex items-center justify-center gap-2 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium"
+                >
+                <Edit size={16} /> Sửa
+                </button>
+                <button 
+                onClick={() => onDelete(chapter.id)}
+                className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 transition font-medium"
+                >
+                <Trash2 size={16} /> Xóa
+                </button>
+            </div>
+        </div>
+    );
+});
+ChapterCard.displayName = "ChapterCard";
+
+export default function Curriculum() {
+
+  const [chapters, setChapters] = useState<CurriculumPlan[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  // Popup thêm
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Popup sửa
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingChapter, setEditingChapter] = useState<CurriculumPlan | null>(null);
+
+  const API_URL = "https://694cec27da5ddabf0037d71b.mockapi.io/curriculum_plans";
+
+
+  const fetchChapters = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get(API_URL);
+      setChapters(response.data);
+    } catch (error) {
+      console.error("Lỗi lấy data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleDelete = useCallback(async (id: string) => {
+    if (window.confirm("Bạn có chắc muốn xóa Chương này không? Toàn bộ bài học trong đó sẽ mất.")) {
+      try {
+        await axios.delete(`${API_URL}/${id}`);
+        // Xóa thành công -> cập nhật lại state để giao diện tự đổi
+        setChapters(prev => prev.filter((chapter) => chapter.id !== id));
+        alert("Đã xóa thành công!");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
+        alert("Xóa thất bại: " + error.message);
+      }
+    }
+  }, []);
+
+  // Mở Popup Sửa
+  const handleOpenEdit = useCallback((chapter: CurriculumPlan) => {
+        setEditingChapter(chapter); // Lưu data đang được bấm vào state
+        setIsEditModalOpen(true);   // Mở popup
+  }, []);
+
+  const handleUpdateSuccess = useCallback((updatedChapter: CurriculumPlan) => {
+        // Tìm data cũ trong danh sách và thay mới
+        setChapters(prev => prev.map(ch => 
+            ch.id === updatedChapter.id ? updatedChapter : ch
+        ));
+  }, []);
+
+  // Callback khi thêm mới thành công
+  const handleAddSuccess = useCallback((newChapter: CurriculumPlan) => {
+        setChapters(prev => [...prev, newChapter]);
+  }, []);
+
+  // Các hàm đóng popup dùng useCallback để tránh re-render child component
+  const handleCloseAdd = useCallback(() => {
+      setIsModalOpen(false);
+  }, []);
+
+  const handleCloseEdit = useCallback(() => {
+      setIsEditModalOpen(false);
+  }, []);
+
+  useEffect(() => {
+    fetchChapters();
+  }, [fetchChapters]);
+
+  return (
+    <div>
+      <PageMeta
+        title="React.js Curriculum Dashboard | TailAdmin - Next.js Admin Dashboard Template"
+        description="This is React.js Curriculum Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
+      />
+      {/* <PageBreadcrumb pageTitle="Curriculum Page" /> */}
+
+      <div className="p-6 bg-gray-50 min-h-screen">
+        {/* Header Page */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">Quản Lý Chương Trình Học</h1>
+            <p className="text-gray-500 text-sm mt-1">Danh sách các chương và bài học chi tiết</p>
+          </div>
+          <button 
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition shadow-sm"
+          >
+            <Plus size={20} /> Thêm chương mới
+          </button>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+              <span className="ml-2 text-gray-600">Đang tải chương trình...</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
+            {chapters.map((chapter) => (
+              <ChapterCard 
+                key={chapter.id}
+                chapter={chapter}
+                onDelete={handleDelete}
+                onEdit={handleOpenEdit}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* POPUP */}
+      <AddCurriculumModal 
+        isOpen={isModalOpen}
+        onClose={handleCloseAdd}
+        onSuccess={handleAddSuccess}
+      />
+
+    {/* POPUP Sửa */}
+      <EditCurriculumModal 
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEdit}
+        initialData={editingChapter}
+        onSuccess={handleUpdateSuccess}
+      />
+
+    </div>
+  );
+}

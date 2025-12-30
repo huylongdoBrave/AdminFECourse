@@ -1,6 +1,7 @@
 "use client"
-import { useState, useEffect, useCallback, memo} from "react"
+    import { useState, useEffect, useCallback, memo, useRef} from "react"
 import axios from "axios"
+import { useAlert } from "../../context/AlertContext"
 import {  PlayCircle, Trash2, Plus, X, Save, Loader2   } from "lucide-react"
 
 
@@ -18,17 +19,68 @@ interface EditCurriculumProps {
     initialData: CurriculumPlan | null; 
     onSuccess: (updatedChapter: CurriculumPlan) => void; // Hàm báo cho cha biết đã sửa xong
 }
+
+// Tách các thành phần tĩnh ra component riêng để tránh re-render không cần thiết
+const ModalHeader = memo(({ title, onClose }: { title: string, onClose: () => void }) => (
+    <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-gray-50">
+        <h3 className="text-xl font-bold text-gray-800">Chỉnh sửa Chương: {title}</h3>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 hover:bg-gray-200 p-1 rounded-full transition">
+            <X size={24} />
+        </button>
+    </div>
+));
+
+const ModalFooter = memo(({ onClose, onSave, isSubmitting }: { onClose: () => void, onSave: () => void, isSubmitting: boolean }) => (
+    <div className="p-5 border-t border-gray-100 flex gap-3 bg-gray-50">
+        <button onClick={onClose} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition font-medium">
+            Hủy
+        </button>
+        <button 
+            onClick={onSave}
+            disabled={isSubmitting}
+            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium flex justify-center items-center gap-2 disabled:opacity-70"
+        >
+            {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+            Lưu thay đổi
+        </button>
+    </div>
+));
+
+const LessonList = memo(({ lessons, onRemove }: { lessons: string[], onRemove: (index: number) => void }) => (
+    <ul className="space-y-2 max-h-[150px] overflow-y-auto custom-scrollbar">
+        {lessons.map((item, idx) => (
+            <li key={idx} className="flex justify-between items-center bg-white px-3 py-2 rounded border border-gray-200 text-sm">
+                <span className="flex items-center gap-2 text-gray-700">
+                    <PlayCircle size={14} className="text-gray-400"/>
+                    {item}
+                </span>
+                <button onClick={() => onRemove(idx)} className="text-red-400 hover:text-red-600 p-1">
+                    <Trash2 size={14} />
+                </button>
+            </li>
+        ))}
+    </ul>
+));
+
+// Component Edit Curriculum
 const EditCurriculumModal: React.FC<EditCurriculumProps> = ({isOpen, onClose, initialData, onSuccess}) =>{
 // export default  function EditCurriculumModal({ isOpen, onClose, initialData, onSuccess }: EditCurriculumProps) {
         
     const [isSubmitting, setIsSubmitting] = useState(false);
-
+    const {showAlert} = useAlert();
     const [formData, setFormData] = useState({
             title: "",
             duration: "",
             currentLesson: "", 
             lessions: [] as string[] 
     });
+
+    // Sử dụng ref để lưu trữ formData mới nhất, giúp handleUpdate không cần phụ thuộc vào state formData
+    // Điều này ngăn ModalFooter bị re-render mỗi khi gõ phím
+    const formDataRef = useRef(formData);
+    useEffect(() => {
+        formDataRef.current = formData;
+    }, [formData]);
 
     const API_URL = "https://694cec27da5ddabf0037d71b.mockapi.io/curriculum_plans";
 
@@ -41,39 +93,43 @@ const EditCurriculumModal: React.FC<EditCurriculumProps> = ({isOpen, onClose, in
                 lessions: initialData.lessions || []
             });
         }
-    }, [initialData, isOpen]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initialData?.id, isOpen]);
 
 
   //thêm 1 bài học nhỏ vào danh sách tạm
     const handleAddLesson = useCallback(() => {
-        if (!formData.currentLesson.trim()) return;
-        setFormData({
-            ...formData,
-            lessions: [...formData.lessions, formData.currentLesson],
-            currentLesson: ""
-        });
-    },[]);
-
-  // xóa 1 bài học nhỏ khỏi danh sách tạm
-    const handleRemoveLesson = useCallback( (indexToRemove: number) => {
-        setFormData({
-            ...formData,
-            lessions: formData.lessions.filter((_, index) => index !== indexToRemove)
+        setFormData(prev => {
+            if (!prev.currentLesson.trim()) return prev;
+            return {
+                ...prev,
+                lessions: [...prev.lessions, prev.currentLesson],
+                currentLesson: ""
+            };
         });
     }, []);
 
+  // xóa 1 bài học nhỏ khỏi danh sách tạm
+    const handleRemoveLesson = useCallback( (indexToRemove: number) => {
+        setFormData(prev => ({
+            ...prev,
+            lessions: prev.lessions.filter((_, index) => index !== indexToRemove)
+        }));
+    }, []);
+
     const handleUpdate = useCallback(async () => {
+        const currentData = formDataRef.current; // Lấy dữ liệu mới nhất từ ref
         if (!initialData) return;
-        if (!formData.title || !formData.duration) {
-            alert("Vui lòng nhập đủ thông tin!");
+        if (!currentData.title || !currentData.duration) {
+            showAlert("Vui lòng nhập đủ thông tin!", "error", "Lỗi");
             return;
         }
         setIsSubmitting(true);
         try {
             const updatedChapter = {
-                title: formData.title,
-                duration: formData.duration,
-                lessions: formData.lessions,
+                title: currentData.title,
+                duration: currentData.duration,
+                lessions: currentData.lessions,
                 // description: initialData.description 
             };
 
@@ -82,16 +138,18 @@ const EditCurriculumModal: React.FC<EditCurriculumProps> = ({isOpen, onClose, in
             // Gọi hàm onSuccess để báo cho cha cập nhật state
             onSuccess(response.data);
             onClose();
-            alert("Cập nhật thành công!");
+            showAlert("Cập nhật thành công!", "success", "Thành công");
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error(error);
-            alert("Lỗi cập nhật: " + error.message);
+            showAlert(error.message, "error", "Lỗi");
+            // alert("Lỗi cập nhật: " + error.message);
+            
         } finally {
             setIsSubmitting(false);
         }
-    },[initialData, formData, onclose]);
+    }, [initialData, onClose, onSuccess]); // Bỏ dependency formData
 
     if (!isOpen || !initialData) return null;
 
@@ -99,12 +157,7 @@ const EditCurriculumModal: React.FC<EditCurriculumProps> = ({isOpen, onClose, in
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
-            <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-gray-50">
-                <h3 className="text-xl font-bold text-gray-800">Chỉnh sửa Chương: {initialData.id}</h3>
-                <button onClick={onClose} className="text-gray-400 hover:text-gray-600 hover:bg-gray-200 p-1 rounded-full transition">
-                    <X size={24} />
-                </button>
-            </div>
+            <ModalHeader title={initialData.id} onClose={onClose} />
 
             {/* Body */}
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
@@ -115,7 +168,8 @@ const EditCurriculumModal: React.FC<EditCurriculumProps> = ({isOpen, onClose, in
                         type="text" 
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                         value={formData.title}
-                        onChange={(e) => setFormData({...formData, title: e.target.value})}
+                        // onChange={(e) => setFormData({...formData, title: e.target.value})}
+                        onChange={(e) => {const val = e.target.value; setFormData(prev => ({...prev, title: val}))}}
                     />
                 </div>
 
@@ -126,7 +180,8 @@ const EditCurriculumModal: React.FC<EditCurriculumProps> = ({isOpen, onClose, in
                         type="text" 
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                         value={formData.duration}
-                        onChange={(e) => setFormData({...formData, duration: e.target.value})}
+                        // onChange={(e) => setFormData({...formData, duration: e.target.value})}
+                        onChange={(e) => {const val = e.target.value; setFormData(prev => ({...prev, duration: val}))}}
                     />
                 </div>
 
@@ -139,7 +194,8 @@ const EditCurriculumModal: React.FC<EditCurriculumProps> = ({isOpen, onClose, in
                             placeholder="Thêm bài học mới..."
                             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none"
                             value={formData.currentLesson}
-                            onChange={(e) => setFormData({...formData, currentLesson: e.target.value})}
+                            // onChange={(e) => setFormData({...formData, currentLesson: e.target.value})}
+                            onChange={(e) => {const val = e.target.value; setFormData(prev => ({...prev, currentLesson: val}))}}
                             onKeyDown={(e) => e.key === 'Enter' && handleAddLesson()}
                         />
                         <button onClick={handleAddLesson} className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-700">
@@ -147,36 +203,12 @@ const EditCurriculumModal: React.FC<EditCurriculumProps> = ({isOpen, onClose, in
                         </button>
                     </div>
 
-                    <ul className="space-y-2 max-h-[150px] overflow-y-auto custom-scrollbar">
-                        {formData.lessions.map((item, idx) => (
-                            <li key={idx} className="flex justify-between items-center bg-white px-3 py-2 rounded border border-gray-200 text-sm">
-                                <span className="flex items-center gap-2 text-gray-700">
-                                    <PlayCircle size={14} className="text-gray-400"/>
-                                    {item}
-                                </span>
-                                <button onClick={() => handleRemoveLesson(idx)} className="text-red-400 hover:text-red-600 p-1">
-                                    <Trash2 size={14} />
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
+                    <LessonList lessons={formData.lessions} onRemove={handleRemoveLesson} />
                 </div>
             </div>
 
             {/* Footer */}
-            <div className="p-5 border-t border-gray-100 flex gap-3 bg-gray-50">
-                <button onClick={onClose} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition font-medium">
-                    Hủy
-                </button>
-                <button 
-                    onClick={handleUpdate}
-                    disabled={isSubmitting}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium flex justify-center items-center gap-2 disabled:opacity-70"
-                >
-                    {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                    Lưu thay đổi
-                </button>
-            </div>
+            <ModalFooter onClose={onClose} onSave={handleUpdate} isSubmitting={isSubmitting} />
         </div>
     </div>
   );

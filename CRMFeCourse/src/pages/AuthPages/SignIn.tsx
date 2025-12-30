@@ -3,8 +3,11 @@ import AuthLayout from "./AuthPageLayout";
 import SignInForm from "../../components/auth/SignInForm";
  
 
-export default function SignIn() {
-  
+interface SignInProps {
+  onSignInSuccess?: () => void;
+}
+
+export default function SignIn({ onSignInSuccess }: SignInProps) {
 
   return (
     <>
@@ -13,7 +16,8 @@ export default function SignIn() {
         description="This is React.js SignIn Tables Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
       />
       <AuthLayout>
-        <SignInForm onLoginSuccess={()=> []} />
+        {/* <SignInForm onLoginSuccess={()=> []} /> */}
+        <SignInForm onLoginSuccess={onSignInSuccess || (() => {})} />
       </AuthLayout>
     </>
   );

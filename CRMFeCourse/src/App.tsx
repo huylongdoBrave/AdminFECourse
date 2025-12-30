@@ -1,5 +1,6 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router";
 import { useEffect, useState } from "react";
+import { AlertProvider } from "./context/AlertContext";
 import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
@@ -21,7 +22,7 @@ import Pricing from "./pages/PricingCourse";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
-import LoginAccess from './components/auth/LoginAccess';
+// import LoginAccess from './components/auth/LoginAccess';
 
  
 export default function App() {
@@ -38,7 +39,7 @@ export default function App() {
         try {
           const session = JSON.parse(sessionData);
           const now = new Date().getTime();
-          const sessionDuration = 50 * 60 * 1000; // Phiên truy cập hợp lệ trong 50 phút
+          const sessionDuration = 5 * 60 * 1000; // Phiên truy cập hợp lệ trong 50 phút
 
           if (session.isLoggedIn && (now - session.timestamp < sessionDuration)) {
             setAuthStatus('authenticated'); 
@@ -60,21 +61,37 @@ export default function App() {
 
   // Chờ kiểm tra phiên hoàn tất
   if (authStatus === 'checking') {
-    return null; // Hoặc 1 component loading toàn màn hình
+    return 
+    <div className="flex h-screen items-center justify-center bg-white dark:bg-gray-900">
+      <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-blue-600 border-t-transparent">
+        </div>
+    </div>;
   }
-  if (authStatus === 'unauthenticated') {
-    return <LoginAccess onLoginSuccess={() => setAuthStatus('authenticated')} />
-  }
+  // if (authStatus === 'unauthenticated') {
+  //   return <LoginAccess onLoginSuccess={() => setAuthStatus('authenticated')} />
+  // }
   //  === ENDING XỬ LÝ XÁC THỰC ===
 
 
   return (
     <>
+    <AlertProvider>
+
       <Router>
         <ScrollToTop />
         <Routes>
-          {/* Dashboard Layout */}
-          <Route element={<AppLayout />}>
+                    {/* Dashboard Layout */}
+          {/* <Route element={<AppLayout />}></Route> */}
+
+          {/* Public Route: Nếu đã đăng nhập thì đẩy về Home, chưa thì hiện SignIn */}
+          <Route path="/signin" element={
+            authStatus === 'authenticated' ? <Navigate to="/" /> : <SignIn onSignInSuccess={() => setAuthStatus('authenticated')} />
+          } />
+          
+          <Route path="/signup" element={<SignUp />} />
+
+          {/* Protected Routes: Nếu chưa đăng nhập thì đẩy về SignIn */}
+          <Route element={authStatus === 'authenticated' ? <AppLayout /> : <Navigate to="/signin" />}>
             <Route index path="/" element={<Home isLoggedIn={true} />} />                   
 
             {/* Others Page */}
@@ -104,13 +121,15 @@ export default function App() {
           </Route>
 
           {/* Auth Layout */}
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
+          {/* <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} /> */}
 
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
+
+    </AlertProvider>
     </>
   );
 }
