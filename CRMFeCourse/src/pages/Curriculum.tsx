@@ -1,9 +1,10 @@
 import PageMeta from "../components/common/PageMeta";
+import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import { useState, useEffect, useCallback, memo } from "react";
 import axios from "axios";
 import { PlayCircle, Clock, Trash2, Plus, Edit, BookOpen } from "lucide-react";
 import EditCurriculumModal from "./Popup/EditCurriculum";
-import AddCurriculumModal from "./Popup/AddCurriculum";
+import AddCurriculumModalBase from "./Popup/AddCurriculum";
 
 // 1. Import Pagination từ Ant Design
 import { Pagination } from 'antd'; 
@@ -15,6 +16,10 @@ interface CurriculumPlan {
     description: string;
     lessions: string[];
 }
+
+// Memoize AddCurriculumModal để tránh re-render khi props không thay đổi
+const AddCurriculumModal = memo(AddCurriculumModalBase);
+AddCurriculumModal.displayName = "AddCurriculumModal";
 
 // Memoized ChapterCard component (Giữ nguyên không đổi)
 const ChapterCard = memo(({ chapter, onDelete, onEdit }: { 
@@ -172,11 +177,12 @@ export default function Curriculum() {
                 title="React.js Curriculum Dashboard"
                 description="Curriculum Dashboard page"
             />
-
+            <PageBreadcrumb pageTitle="Quản Lý Chương Trình Học" />
             <div className="p-6 bg-gray-50 min-h-screen">
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-800">Quản Lý Chương Trình Học</h1>
+                        {/* <h1 className="text-2xl font-bold text-gray-800">Quản Lý Chương Trình Học</h1> */}
+
                         <p className="text-gray-500 text-sm mt-1">Danh sách các chương và bài học chi tiết</p>
                     </div>
                     <button 

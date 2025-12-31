@@ -1,8 +1,24 @@
-"use client"
 import { useState, useEffect, useCallback, memo, useRef } from "react"
 import axios from "axios"
-import { X, Save, Loader2, Plus, Trash2, Check } from "lucide-react"
+import { X, Save, Loader2, Plus, Trash2, Check, GripVertical } from "lucide-react"
 import { useAlert } from "../../context/AlertContext"
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 // Interface dữ liệu
 interface PricingPlan {
@@ -16,11 +32,59 @@ interface PricingPlan {
 interface EditModalProps {
     isOpen: boolean;
     onClose: () => void;
-    initialData: PricingPlan | null; // Dữ liệu gói cần sửa
-    onSuccess: (updatedPlan: PricingPlan) => void; // Hàm báo cho cha update lại list
+    initialData: PricingPlan | null;
+    onSuccess: (updatedPlan: PricingPlan) => void; 
 }
 
-// Tách các thành phần UI tĩnh để tránh re-render
+interface DescriptionListProps {
+    items: string[];
+    onRemove: (index: number) => void;
+    onReorder: (newItems: string[]) => void; 
+}
+
+const SortableItem = ({ id, children, onRemove }: { id: string, children: React.ReactNode, onRemove: () => void }) => {
+    const {
+            attributes,
+            listeners,
+            setNodeRef,
+            transform,
+            transition,
+            isDragging
+        } = useSortable({ id: id });
+    const style = {
+            transform: CSS.Transform.toString(transform),
+            transition,
+            zIndex: isDragging ? 999 : 'auto', // Đẩy item đang kéo lên trên
+            opacity: isDragging ? 0.6 : 1,     // Làm mờ nhẹ khi kéo
+        };
+    return (
+        <li 
+            ref={setNodeRef} 
+            style={style} 
+            className={`flex justify-between items-center bg-white px-3 py-2 rounded border text-sm select-none ${isDragging ? 'border-blue-500 shadow-lg' : 'border-gray-200'}`}
+        >
+            <div className="flex items-center gap-2 text-gray-700 flex-1 overflow-hidden">
+                {/* Icon tay nắm để kéo */}
+                <div 
+                    {...attributes} 
+                    {...listeners} 
+                    className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 p-1 touch-none"
+                >
+                    <GripVertical size={16} />
+                </div> 
+                <span className="flex items-center gap-2 truncate">
+                    <Check size={14} className="text-green-500 shrink-0"/>
+                    {children}
+                </span>
+            </div>
+            <button onClick={onRemove} className="text-red-400 hover:text-red-600 p-1 shrink-0 ml-2 cursor-pointer">
+                <Trash2 size={14} />
+            </button>
+        </li>
+    );
+};
+
+// Ui phụ
 const ModalHeader = memo(({ title, onClose }: { title: string, onClose: () => void }) => (
     <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-gray-50">
         <h3 className="text-xl font-bold text-gray-800">Sửa Gói: {title}</h3>
@@ -46,22 +110,73 @@ const ModalFooter = memo(({ onClose, onSave, isSubmitting }: { onClose: () => vo
     </div>
 ));
 
-const DescriptionList = memo(({ items, onRemove }: { items: string[], onRemove: (index: number) => void }) => (
-    <ul className="space-y-2 max-h-[150px] overflow-y-auto custom-scrollbar">
-        {items.map((item, idx) => (
-            <li key={idx} className="flex justify-between items-center bg-white px-3 py-2 rounded border border-gray-200 text-sm">
-                <span className="flex items-center gap-2 text-gray-700">
-                    <Check size={14} className="text-green-500"/>
-                    {item}
-                </span>
-                <button onClick={() => onRemove(idx)} className="text-red-400 hover:text-red-600 p-1">
-                    <Trash2 size={14} />
-                </button>
-            </li>
-        ))}
-    </ul>
-));
+// const DescriptionList = memo(({ items, onRemove }: { items: string[], onRemove: (index: number) => void }) => (
+//     <ul className="space-y-2 max-h-[150px] overflow-y-auto custom-scrollbar">
+//         {items.map((item, idx) => (
+//             <li key={idx} className="flex justify-between items-center bg-white px-3 py-2 rounded border border-gray-200 text-sm">
+//                 <span className="flex items-center gap-2 text-gray-700">
+//                     <Check size={14} className="text-green-500"/>
+//                     {item}
+//                 </span>
+//                 <button onClick={() => onRemove(idx)} className="text-red-400 hover:text-red-600 p-1">
+//                     <Trash2 size={14} />
+//                 </button>
+//             </li>
+//         ))}
+//     </ul>
+// ));
 
+const DescriptionList = memo(({ items, onRemove, onReorder }: DescriptionListProps) => {
+    // Cấu hình cảm biến để nhận diện chuột và bàn phím
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    // Xử lý sự kiện khi thả chuột ra
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (over && active.id !== over.id) {
+            const oldIndex = parseInt(active.id as string);
+            const newIndex = parseInt(over.id as string);
+            
+            // Đổi chỗ phần tử trong mảng
+            const newItems = arrayMove(items, oldIndex, newIndex);
+            onReorder(newItems);
+        }
+    };
+
+    return (
+        <DndContext 
+            sensors={sensors} 
+            collisionDetection={closestCenter} 
+            onDragEnd={handleDragEnd}
+        >
+            <ul className="space-y-2 max-h-[180px] overflow-y-auto custom-scrollbar p-1">
+                <SortableContext 
+                    items={items.map((_, index) => index.toString())} 
+                    strategy={verticalListSortingStrategy}
+                >
+                    {items.map((item, index) => (
+                        <SortableItem 
+                            key={`${index}-${item}`} // Key kết hợp để React render đúng
+                            id={index.toString()}    // Dùng index làm ID cho việc sắp xếp mảng string đơn giản
+                            onRemove={() => onRemove(index)}
+                        >
+                            {item}
+                        </SortableItem>
+                    ))}
+                </SortableContext>
+            </ul>
+        </DndContext>
+    );
+});
+
+
+// Component sửa
 const EditPricingModal: React.FC<EditModalProps> = ({ isOpen, onClose, initialData, onSuccess }) => {
     const {showAlert} = useAlert();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,6 +194,7 @@ const EditPricingModal: React.FC<EditModalProps> = ({ isOpen, onClose, initialDa
 
     // Ref để giữ giá trị mới nhất, tránh re-render nút Lưu khi gõ phím
     const formDataRef = useRef(formData);
+
     useEffect(() => {
         formDataRef.current = formData;
     }, [formData]);
@@ -95,7 +211,7 @@ const EditPricingModal: React.FC<EditModalProps> = ({ isOpen, onClose, initialDa
             });
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [initialData?.id, isOpen]);
+    }, [initialData, isOpen]);
 
     // Thêm 1 dòng quyền lợi vào danh sách tạm
     const handleAddDesc = useCallback(() => {
@@ -116,6 +232,14 @@ const EditPricingModal: React.FC<EditModalProps> = ({ isOpen, onClose, initialDa
             descript: prev.descript.filter((_, index) => index !== indexToRemove)
         }));
     }, []);
+
+    // Hàm cập nhật thứ tự mới từ component con
+    const handleReorderDesc = useCallback((newItems: string[]) => {
+        setFormData(prev => ({
+            ...prev,
+            descript: newItems
+        }));
+    }, []); 
 
     // Hàm LƯU (GỌI API PUT)
     const handleUpdate = useCallback(async () => {
@@ -158,12 +282,10 @@ const EditPricingModal: React.FC<EditModalProps> = ({ isOpen, onClose, initialDa
     if (!isOpen || !initialData) return null;
 
     return (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+<div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
-                {/* Header */}
                 <ModalHeader title={initialData.name} onClose={onClose} />
 
-                {/* Body */}
                 <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                     {/* Tên Gói */}
                     <div>
@@ -198,11 +320,10 @@ const EditPricingModal: React.FC<EditModalProps> = ({ isOpen, onClose, initialDa
                         </div>
                     </div>
 
-                    {/* Danh sách quyền lợi (Edit) */}
+                    {/* Danh sách quyền lợi (Edit + Drag Drop) */}
                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Chỉnh sửa quyền lợi</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Kéo mục <GripVertical size={14} className="inline"/> để xếp</label>
                         
-                        {/* Ô nhập + Nút thêm */}
                         <div className="flex gap-2 mb-3">
                             <input 
                                 type="text" 
@@ -217,12 +338,15 @@ const EditPricingModal: React.FC<EditModalProps> = ({ isOpen, onClose, initialDa
                             </button>
                         </div>
 
-                        {/* List items */}
-                        <DescriptionList items={formData.descript} onRemove={handleRemoveDesc} />
+                        {/* Truyền function reorder vào component */}
+                        <DescriptionList 
+                            items={formData.descript} 
+                            onRemove={handleRemoveDesc} 
+                            onReorder={handleReorderDesc}
+                        />
                     </div>
                 </div>
 
-                {/* Footer */}
                 <ModalFooter onClose={onClose} onSave={handleUpdate} isSubmitting={isSubmitting} />
             </div>
         </div>

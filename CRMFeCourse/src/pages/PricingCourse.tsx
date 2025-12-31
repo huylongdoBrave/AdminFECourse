@@ -1,5 +1,6 @@
 // src/pages/PricingCourse.tsx
 import PageMeta from "../components/common/PageMeta";
+import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import { useEffect, useState, useCallback, memo } from 'react';
 import axios from 'axios';
 import { Trash2, Plus, Edit, Loader2 } from 'lucide-react';
@@ -147,11 +148,13 @@ export default function PricingCourse() {
 
     return (
         <div>
-            <PageMeta title="Pricing Dashboard" description="Manage pricing plans" />
-
+            <PageMeta 
+              title="Pricing Dashboard" 
+              description="Manage pricing plans" />
+            <PageBreadcrumb pageTitle="Quản lý Bảng Giá" />
             <div className="p-6 bg-gray-50 min-h-screen relative">
                 <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold text-gray-800">Quản lý Bảng Giá</h1>
+                    <p className="text-gray-500 text-sm mt-1">Danh sách các giá gói</p>
                     <button 
                         onClick={() => setIsAddModalOpen(true)}
                         className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm"
